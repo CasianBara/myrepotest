@@ -1,0 +1,298 @@
+﻿@page "/stepform"
+@using RockPaperScissors.Models
+@using RockPaperScissors.Services
+@inject NavigationManager Navigation
+@inject ISessionService _sessionService
+@inject IBotService _botService
+@inject Session GameSession
+@inject IJSRuntime JS
+
+<PageTitle>Game Zone</PageTitle>
+
+<div class="hs-step-form h-100 overflow-hidden">
+    <ul id="stepFormProgress" class="step step-sm bg-light step-icon-sm step-inline step-item-between mb-4 d-flex justify-content-center"
+        style="padding: 30px 0; border-radius: 10px; margin-right:20px; margin-left:20px;">
+        <li class="step-item bg-light">
+            <a class="step-content-wrapper @GetStepClass(1)" style="text-decoration:none;" href="javascript:;" @onclick="() => ChangeStep(1)">
+                <span class="step-icon step-icon-soft-dark">1</span>
+                <div class="step-content">
+                    <span class="step-title">Name</span>
+                </div>
+            </a>
+        </li>
+        <li class="step-item bg-light">
+            <a class="step-content-wrapper @GetStepClass(2)" style="text-decoration:none;" href="javascript:;" @onclick="() => ChangeStep(2)">
+                <span class="step-icon step-icon-soft-dark">2</span>
+                <div class="step-content">
+                    <span class="step-title">Rounds</span>
+                </div>
+            </a>
+        </li>
+        <li class="step-item bg-light">
+            <a class="step-content-wrapper @GetStepClass(3)" style="text-decoration:none;" href="javascript:;" @onclick="() => ChangeStep(3)">
+                <span class="step-icon step-icon-soft-dark">3</span>
+                <div class="step-content">
+                    <span class="step-title">Invite</span>
+                </div>
+            </a>
+        </li>
+    </ul>
+
+    <div id="basicStepInfo" class="step h-100" style="display: block; background-color: #f5f5f5; border-radius: 10px; margin-top: -30px;">
+        <div class="full-page-container bg-light h-100 d-flex justify-content-center align-items-center">
+            <div class="text-center p-5 rounded" style="box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                <h1 class="mb-4" style="font-family: 'Arial Black', sans-serif;">Welcome to the Game Zone!</h1>
+                <div class="mb-3">
+                    <label for="nameInput" class="form-label">Enter your name:</label>
+                    <InputText @bind-Value="name" id="nameInput" class="form-control form-control-lg" placeholder="Your name"
+                               style="border-radius: 25px;" @onkeydown="HandleKeyPress" />
+                </div>
+                <div class="mb-4">
+                    <button class="btn btn-lg px-5" @onclick="NextStep" style="background-color: #ff6347; color: white; border-radius: 25px;">🎮 Next</button>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(displayMessage))
+                {
+                    <p class="lead">@displayMessage</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div id="basicStepTerms" class="step h-100" style="display: none; background-color: #f5f5f5; border-radius: 10px; margin-top: -30px;">
+        <div class="full-page-container bg-light h-100 d-flex justify-content-center align-items-center overflow-hidden" style="background-color: #e3f2fd;"
+            <div class="text-center p-5 rounded" style="background-color: rgba(255, 255, 255, 0.85); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); width: 400px;">
+                @if (!string.IsNullOrEmpty(Player1?.Name))
+                {
+                    <h2 class="text-dark mb-4" style="font-family: 'Comic Sans MS', cursive;">Welcome, @Player1.Name!</h2>
+                }
+
+                <div class="d-flex flex-column align-items-center mb-5">
+                    <label for="roundsInput" class="form-label" style="font-size: 1.3rem; font-family: 'Arial Black', sans-serif; color: #2e8b57;">🔢 Number of Rounds:</label>
+                    <div class="input-group">
+                        <button class="btn btn-outline-secondary" @onclick="DecrementRounds">-</button>
+                        <span class="form-control text-center" style="font-size: 1.1rem; padding: 10px; width: 80px; background-color: #f8f9fa;">
+                            @numberOfRounds
+                        </span>
+                        <button class="btn btn-outline-secondary" @onclick="IncrementRounds">+</button>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <button type="button" class="btn btn-ghost-secondary" @onclick="PreviousStep" style="border-radius: 25px; padding: 15px 30px;">
+                        <i class="bi-chevron-left small"></i> Previous
+                    </button>
+                    <button class="btn btn-success btn-lg" @onclick="CreateGameSession" style="border-radius: 25px; padding: 15px 30px;">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="basicStepMembers" class="step h-100" style="display: none; background-color: #f5f5f5; border-radius: 10px;margin-top: -30px;">
+        <div class="full-page-container bg-light h-100 d-flex justify-content-center align-items-center overflow-hidden">
+            <div class="text-center p-5 rounded" style="background-color: rgba(255, 255, 255, 0.85); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); width: 400px;">
+                <div class="d-flex justify-content-between align-items-center w-100 p-4">
+                    @if (!string.IsNullOrEmpty(Player1?.Name))
+                    {
+                        <h2 class="text-dark" style="font-family: 'Comic Sans MS', cursive; font-size: 1.5rem;">Welcome, @Player1.Name!</h2>
+                    }
+                </div>
+
+                <h1 class="mb-4" style="font-family: 'Arial Black', sans-serif; color: #2e8b57;">Create Game Session</h1>
+
+                <div class="mb-4">
+                    <button class="btn btn-lg btn-warning w-100" @onclick="InviteFriend" style="border-radius: 30px;">🤝 Invite a Friend</button>
+                </div>
+                @if (inviteLinkCreated)
+                {
+                    <div class="row mb-4">
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="@inviteLink" disabled>
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" @onclick="CopyInviteLink" type="button">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="mb-4">
+                    <button class="btn btn-lg btn-info w-100" @onclick="AddBot" style="border-radius: 25px;">🤖 Add a Bot</button>
+                </div>
+                <div class="mb-4">
+                    <button class="btn btn-lg btn-success w-100" @onclick="GoToGame" style="border-radius: 25px;" disabled="@(!playerJoined)">🎮 Play</button>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn btn-ghost-secondary me-2" @onclick="PreviousStep" style="border-radius: 25px; padding: 15px 30px;">
+                        <i class="bi-chevron-left small"></i> Previous
+                    </button>
+                </div>
+
+                @if (invited)
+                {
+                    <div class="mb-4">
+                        <button class="btn btn-lg btn-info w-100" @onclick="RefreshStatus" style="border-radius: 25px;">Refresh status</button>
+                    </div>
+
+                    @if (playerJoined)
+                    {
+                        <div class="alert alert-info" role="alert">
+                            You can start the game.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info" role="alert">
+                            You can't start the game until the other player joins the session.
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>                  
+
+<script>
+    window.clipboardCopy = function (text) {
+        navigator.clipboard.writeText(text).then(function () {
+            alert("Copied to clipboard!");
+        })
+            .catch(function (error) {
+                alert("Error copying text: " + error);
+            });
+    }
+</script>
+
+@code {
+    private string name = string.Empty;
+    private string displayMessage = string.Empty;
+    private Player Player1;
+    private int numberOfRounds = 3;
+    private string sessionId;
+    private string currentStep = "#basicStepInfo"; 
+    private string inviteLink = string.Empty;
+    private bool inviteLinkCreated = false;
+    private bool invited = false;
+    private bool playerJoined = false;
+    private SessionStatus status;
+
+    private string GetStepClass(int stepNumber)
+    {
+        return currentStep == $"#basicStepInfo" && stepNumber == 1 || currentStep == $"#basicStepTerms" && stepNumber == 2 || currentStep == $"#basicStepMembers" && stepNumber == 3
+            ? "active"
+            : "";
+    }
+
+    private async void ShowStep(string stepId)
+    {
+        currentStep = stepId;
+        await JS.InvokeVoidAsync("eval", "document.querySelectorAll('.step').forEach(function(el) { el.style.display = 'none'; })");
+        await JS.InvokeVoidAsync("eval", $"document.querySelector('{stepId}').style.display = 'block'");
+        StateHasChanged();
+    }
+
+    private void NextStep()
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            displayMessage = "Please enter your name to continue.";
+            return;
+        }
+        GameSession.Player = new Player() { Id = Guid.NewGuid().ToString(), Choice = null, Name = name };
+        Player1 = GameSession.Player;
+        ShowStep("#basicStepTerms");
+    }
+
+    private void PreviousStep()
+    {
+        ShowStep("#basicStepInfo");
+    }
+
+    private void IncrementRounds()
+    {
+        if (numberOfRounds < 101)
+        {
+            numberOfRounds += 2;
+        }
+    }
+
+    private void DecrementRounds()
+    {
+        if (numberOfRounds > 1)
+        {
+            numberOfRounds -= 2;
+        }
+    }
+
+    private async Task CreateGameSession()
+    {
+        sessionId = Guid.NewGuid().ToString();
+        GameSession.SessionId = sessionId;
+        await _sessionService.CreateSession(sessionId, Player1);
+        await _sessionService.SetNumberOfRounds(sessionId, numberOfRounds);
+        ShowStep("#basicStepMembers");
+    }
+
+    private void InviteFriend()
+    {
+        inviteLink = $"{Navigation.BaseUri}join/{sessionId}";
+        inviteLinkCreated = true;
+        invited = true;
+        StateHasChanged();
+    }
+
+    private async Task AddBot()
+    {
+        await _sessionService.InviteBot(sessionId);
+        invited = true;
+        StateHasChanged();
+    }
+
+    private void CopyInviteLink()
+    {
+        JS.InvokeVoidAsync("clipboardCopy", inviteLink);
+    }
+
+    private void GoToGame()
+    { 
+        Navigation.NavigateTo($"/gamepage");
+    }
+
+    private async Task RefreshStatus()
+    {
+        status = await _sessionService.GetStatus(sessionId);
+        switch (status.State)
+        {
+            case SessionState.Created:
+            case SessionState.WaitingForPlayer:
+                playerJoined = false;
+                break;
+            case SessionState.WaitingForMoves:
+                playerJoined = true;
+                break;
+        }
+    }
+
+    private void HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            NextStep();
+        }
+    }
+
+    private void ChangeStep(int stepNumber)
+    {
+        switch (stepNumber)
+        {
+            case 1:
+                ShowStep("#basicStepInfo");
+                break;
+            case 2:
+                ShowStep("#basicStepTerms");
+                break;
+            case 3:
+                ShowStep("#basicStepMembers");
+                break;
+        }
+    }
+}
