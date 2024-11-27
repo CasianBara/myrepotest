@@ -30,7 +30,7 @@ you to use the portal to monitor your deployments at any point.
 
 If you get stuck during the exercise you can use this button to deploy all the resources from this exercise:
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2F{Owner}%2F{Repo}%2Frefs%2Fheads%2Fmaster%2Finfra%2Farm%2FazuredeployARM.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FCasianBara%2Fmyrepotest%2Frefs%2Fheads%2Fmaster%2Finfra%2Farm%2FazuredeployARM.json)
 
 After deploying all resources using the button you need to go through **step 9** to update environment variables for api containers and also do **step 6, point 4.**
 
